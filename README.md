@@ -228,4 +228,4 @@ When adding patterns, preserve the masking contract and keep detector guidance e
 
 ## License
 
-Add your preferred project license in this repository (for example, MIT).
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
