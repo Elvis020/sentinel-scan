@@ -33,19 +33,58 @@ def detect_project_type(project_path: str) -> list[str]:
     if any((path / f).exists() for f in [".env", ".env.local", ".env.production", ".env.development"]):
         categories.append("env")
 
+    ai_agent_paths = [
+        ".mcp.json",
+        ".cursor",
+        ".claude",
+        ".codex",
+        ".continue",
+        ".goose",
+        ".opencode",
+    ]
+    if any((path / f).exists() for f in ai_agent_paths) or any(path.glob(".aider*")):
+        categories.append("ai_agent_config")
+
+    if (path / ".github" / "workflows").is_dir() or (path / ".npmrc").exists() or (path / ".pypirc").exists():
+        categories.append("package_publishing")
+
+    artifact_dirs = ["dist", "build", "out", "coverage"]
+    if any((path / d).is_dir() for d in artifact_dirs) or any(
+        path.glob(pattern) for pattern in ["*.map", "*.tgz", "*.zip", "*.vsix", "*.whl", "*.jar"]
+    ):
+        categories.append("artifact_hygiene")
+
     return sorted(set(categories)) if categories else ["generic"]
 
 
 def prioritize_patterns(categories: list[str]) -> dict:
     priority_map = {
-        "node": {"critical": ["openai", "github", "aws", "stripe"], "high": ["database", "slack", "sendgrid"]},
-        "python": {"critical": ["openai", "github", "aws", "stripe"], "high": ["database", "slack", "sendgrid"]},
+        "node": {
+            "critical": ["openai", "anthropic", "github", "aws", "gcp", "stripe", "langsmith", "posthog"],
+            "high": ["database", "slack", "sendgrid", "package_publishing", "artifact_hygiene"],
+        },
+        "python": {
+            "critical": ["openai", "anthropic", "github", "aws", "gcp", "stripe", "langsmith"],
+            "high": ["database", "slack", "sendgrid", "pypi"],
+        },
         "go": {"critical": ["github", "aws", "stripe"], "high": ["database", "docker", "kubernetes"]},
         "rust": {"critical": ["github", "aws"], "high": ["database", "env"]},
         "java": {"critical": ["github", "aws", "azure"], "high": ["database", "docker"]},
         "docker": {"critical": ["aws", "gcp", "dockerhub"], "high": ["private_key", "registry_auth"]},
         "terraform": {"critical": ["aws", "azure", "gcp"], "high": ["digitalocean", "cloudflare"]},
         "env": {"critical": ["openai", "github", "aws", "stripe", "database"], "high": ["generic_assignment"]},
+        "ai_agent_config": {
+            "critical": ["openai", "anthropic", "github", "gcp", "langsmith", "posthog"],
+            "high": ["mcp_config", "generic_assignment", "tool_auth"],
+        },
+        "package_publishing": {
+            "critical": ["github", "npm", "pypi", "gcp", "aws"],
+            "high": ["vsce", "openvsx", "registry_auth", "ci_cd"],
+        },
+        "artifact_hygiene": {
+            "critical": ["private_key", "source_map_secrets"],
+            "high": ["source_map", "archive", "generated_bundle"],
+        },
         "generic": {"critical": ["openai", "github", "aws", "stripe"], "high": ["database", "generic_assignment"]},
     }
 

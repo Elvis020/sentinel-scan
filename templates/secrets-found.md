@@ -20,6 +20,8 @@
 
 **Location:** `{file-path}:{line-number}`
 **Detector:** `{detector}`
+**Provider:** `{provider|unknown}`
+**Source:** `{working-tree|git-history|artifact-hygiene|external-scanner}`
 **Severity:** `CRITICAL`
 **Status:** `{active|suppressed}`
 

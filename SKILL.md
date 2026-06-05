@@ -30,6 +30,11 @@ Sentinel writes only to `.sentinel/`. It may read `.codebase-indexer/docs/` to t
 4. Never print full secret values; mask as `first4...last4`.
 5. Use executable/valid regex search commands (e.g., `rg --pcre2`).
 6. Run git history scan only with commit-count guardrails.
+7. For commit-history leaks, attempt `gitleaks` first when available.
+8. If `gitleaks` cannot run (missing binary, install blocked, offline, execution failure), continue with fallback `git log` scans and explicitly report that `gitleaks` was skipped and why.
+9. Treat AI-agent and MCP configuration files as high-value targets (`.mcp.json`, `.cursor/`, `.claude/`, `.codex/`, `.continue/`, `.aider*`, `.goose/`, `.opencode/`).
+10. Include artifact hygiene checks for generated packages, source maps, exported docs, archives, and extension bundles.
+11. When optional scanners such as `trufflehog` or `titus` are already available, use them for validation, decoding, and binary/archive extraction; do not make the scan fail when they are absent.
 
 ## Scan Workflow
 
@@ -40,10 +45,16 @@ Sentinel writes only to `.sentinel/`. It may read `.codebase-indexer/docs/` to t
 
 2. Targeted file scan
 - Always scan `.env*`, known config/credential files, and indexer-identified sensitive paths.
+- Also scan AI/MCP configs, package publishing configs, CI workflows, generated source maps, and release artifacts.
 - Run critical patterns first, then high-confidence contextual patterns.
+- Include 2026 provider additions: Cloudflare, Figma SCIM, Google API keys, LangSmith, OpenVSX, and PostHog.
 
 3. Git history scan (mode-dependent)
 - `git rev-list --count HEAD` first.
+- If `gitleaks` is missing, attempt install only when network access is available.
+- Try `gitleaks git --verbose --redact --source .` for commit-history scanning.
+- If `gitleaks` is unavailable or fails, run fallback targeted history scans (including `.env*`) and record skip reason.
+- Include deleted-file history for `.env*` and AI/MCP configuration paths.
 - If `>500`, warn and default to targeted `-G`/`-S` scans.
 - If `>2000`, require explicit user confirmation before full patch-history scan.
 

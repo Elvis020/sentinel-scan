@@ -20,6 +20,8 @@ Never print full raw secrets.
 - `file`
 - `line`
 - `detector`
+- `provider` (`unknown` when not inferable)
+- `source` (`working-tree` | `git-history` | `artifact-hygiene` | `external-scanner`)
 - `masked_value`
 - `status` (`active` | `suppressed`)
 

@@ -18,6 +18,7 @@ Most secret scans fail in one of two ways: too noisy to trust, or too shallow to
 
 - Curated, high-signal detectors for common credential types
 - Targeted scan strategy guided by project context (`.codebase-indexer/docs/`)
+- 2026-aware coverage for AI/MCP configs, package publishing tokens, source maps, and release artifacts
 - Explicit severity model (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`)
 - Built-in suppression workflow via `.sentinel-ignore`
 - Strict masking policy so raw secrets are never printed
@@ -25,10 +26,14 @@ Most secret scans fail in one of two ways: too noisy to trust, or too shallow to
 ## Core Capabilities
 
 - Scans high-risk files (`.env*`, credential/config paths, indexer-identified files)
+- Scans AI-agent and MCP configuration paths such as `.mcp.json`, `.cursor/`, `.claude/`, `.codex/`, `.continue/`, `.aider*`, `.goose/`, and `.opencode/`
+- Flags artifact hygiene risks in source maps, package archives, extension bundles, exported docs, and generated output
 - Supports three scan modes:
   - `quick`: fast, focused scan over high-value files
   - `full`: working tree scan plus optional git history checks
   - `git-history`: commit-history-centric investigation
+- Uses `gitleaks` for commit-history scanning when available, with automatic fallback to built-in `git log` detectors
+- Uses optional tools such as `trufflehog` or `titus` when already available for validation, decoding, and binary/archive extraction
 - Applies commit-count guardrails before deep history scans
 - Produces structured markdown reports for triage and remediation
 - Includes a project-type prioritizer script for detector ordering
@@ -43,12 +48,20 @@ flowchart TD
     D --> E[Run Targeted Pattern Scans]
     E --> F{Mode Requires Git History?}
     F -- Yes --> G[Commit Count Guardrails]
-    G --> H[Targeted git log Pattern Scan]
-    F -- No --> I[Skip History]
-    H --> J[Normalize Findings]
-    I --> J
-    J --> K[Mask Values first4...last4]
-    K --> L[Write Reports to .sentinel/]
+    G --> H{gitleaks Available?}
+    H -- Yes --> I[Run gitleaks history scan]
+    H -- No/Failed --> J[Run fallback git log pattern scan]
+    E --> K{Optional deep scanner available?}
+    K -- Yes --> L[Run validation/extraction scan]
+    K -- No --> M[Skip optional deep scan]
+    F -- No --> N[Skip History]
+    I --> O[Normalize Findings]
+    J --> O
+    L --> O
+    M --> O
+    N --> O
+    O --> P[Mask Values first4...last4]
+    P --> Q[Write Reports to .sentinel/]
 ```
 
 ## Repository Layout
@@ -59,6 +72,7 @@ flowchart TD
 ├── guides/
 │   ├── scan-workflow.md        # End-to-end scanning workflow
 │   ├── patterns.md             # Curated detector patterns
+│   ├── emerging-risks-2026.md  # Research-backed coverage refresh notes
 │   └── report-format.md        # Required report schema and masking contract
 ├── scripts/
 │   └── pattern-prioritizer.py  # Project-shape-based detector prioritization
@@ -111,6 +125,11 @@ For best signal quality on large repositories, run [codebase-indexer](https://gi
 - `.sentinel-ignore` is applied before reporting
 - `.codebase-indexer/docs/architecture.md` and `implementation.md` are used for scan targeting when present
 - Detector commands should be executable and validated (`rg --pcre2` recommended)
+- Commit-history scanning should use `gitleaks` when available
+- If `gitleaks` is missing, install can be attempted only when internet/package access is available
+- If `gitleaks` cannot run, Sentinel must continue with fallback history scans and report `gitleaks skipped: <reason>`
+- AI/MCP config paths and generated artifacts are treated as high-value targets
+- Optional external scanners may enrich validation and extraction, but absence of those tools must not fail the scan
 - History scanning is constrained by repo size:
   - `>500` commits: prefer targeted history scans
   - `>2000` commits: require explicit confirmation before full patch-history scan
@@ -144,10 +163,15 @@ Sentinel-Scan prioritizes high-confidence credential patterns, including:
 - GitHub PATs
 - AWS access keys
 - Stripe keys
+- Google API keys
+- LangSmith and PostHog keys
+- Cloudflare, Figma SCIM, and OpenVSX context-anchored tokens
+- Package publishing tokens (`VSCE_PAT`, `OVSX_PAT`, `NPM_TOKEN`, `PYPI_TOKEN`, etc.)
 - Private key headers
 - Connection strings
 - JWT-like tokens
 - Context-anchored generic secret assignments
+- Artifact hygiene signals for source maps, archives, and generated bundles
 
 See `guides/patterns.md` for pattern details and false-positive controls.
 
@@ -164,10 +188,10 @@ Example output:
 ```json
 {
   "project_path": ".",
-  "detected_categories": ["node", "docker"],
+  "detected_categories": ["ai_agent_config", "node", "docker"],
   "priorities": {
-    "critical": ["aws", "dockerhub", "gcp", "github", "openai", "stripe"],
-    "high": ["database", "registry_auth", "sendgrid", "slack"]
+    "critical": ["anthropic", "aws", "dockerhub", "gcp", "github", "langsmith", "openai", "stripe"],
+    "high": ["artifact_hygiene", "database", "mcp_config", "package_publishing", "registry_auth", "sendgrid", "slack"]
   }
 }
 ```
