@@ -78,10 +78,14 @@ flowchart TD
 │   ├── pattern-prioritizer.py  # Project-shape-based detector prioritization
 │   └── validate-patterns.py    # Regex validation for documented patterns
 ├── sentinel_scan/
-│   └── catalog.py              # Shared project profiling and pattern validation logic
+│   ├── catalog.py              # Shared project profiling and pattern validation logic
+│   ├── reporting.py            # Finding schema validation and markdown rendering helpers
+│   └── scan_plan.py            # Structured scan mode, target, tool, and history planning
 ├── tests/
 │   ├── test_catalog.py
-│   └── test_pattern_prioritizer.py
+│   ├── test_pattern_prioritizer.py
+│   ├── test_reporting.py
+│   └── test_scan_plan.py
 └── templates/
     ├── security-report.md      # Security summary template
     ├── secrets-found.md        # Detailed finding template
@@ -209,7 +213,7 @@ Example output:
 Run the local checks before changing detector guidance:
 
 ```bash
-python3 -m py_compile sentinel_scan/catalog.py scripts/pattern-prioritizer.py scripts/validate-patterns.py
+python3 -m py_compile sentinel_scan/catalog.py sentinel_scan/reporting.py sentinel_scan/scan_plan.py scripts/pattern-prioritizer.py scripts/validate-patterns.py
 python3 -m unittest discover -s tests
 python3 scripts/validate-patterns.py
 python3 scripts/pattern-prioritizer.py .

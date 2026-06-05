@@ -1,5 +1,7 @@
 # Sentinel-Scan Report Format
 
+`sentinel_scan.reporting` is the executable contract for finding fields, severity/status/source validation, detail rendering, and report output paths. Keep this guide aligned with that module.
+
 ## Required outputs
 
 - `.sentinel/security.md`

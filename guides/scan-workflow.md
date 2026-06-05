@@ -1,5 +1,7 @@
 # Sentinel-Scan Workflow
 
+`sentinel_scan.scan_plan` is the executable planning contract for scan modes, target globs, tool selection, fallback history patterns, and commit-count guardrails. Keep this guide aligned with that module.
+
 ## 0) Pre-scan
 
 1. Read `.sentinel-ignore` (if present).
