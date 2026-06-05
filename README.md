@@ -75,7 +75,10 @@ flowchart TD
 │   ├── emerging-risks-2026.md  # Research-backed coverage refresh notes
 │   └── report-format.md        # Required report schema and masking contract
 ├── scripts/
-│   └── pattern-prioritizer.py  # Project-shape-based detector prioritization
+│   ├── pattern-prioritizer.py  # Project-shape-based detector prioritization
+│   └── validate-patterns.py    # Regex validation for documented patterns
+├── tests/
+│   └── test_pattern_prioritizer.py
 └── templates/
     ├── security-report.md      # Security summary template
     ├── secrets-found.md        # Detailed finding template
@@ -145,6 +148,8 @@ Minimum finding schema:
 - `file`
 - `line`
 - `detector`
+- `provider` (`unknown` when not inferable)
+- `source` (`working-tree`, `git-history`, `artifact-hygiene`, or `external-scanner`)
 - `masked_value`
 - `status` (`active` or `suppressed`)
 
@@ -195,6 +200,19 @@ Example output:
   }
 }
 ```
+
+## Validation
+
+Run the local checks before changing detector guidance:
+
+```bash
+python3 -m py_compile scripts/pattern-prioritizer.py scripts/validate-patterns.py
+python3 -m unittest discover -s tests
+python3 scripts/validate-patterns.py
+python3 scripts/pattern-prioritizer.py .
+```
+
+The CI workflow runs the same checks and installs `ripgrep` so documented PCRE2 patterns are validated with the same engine used by the scan workflow.
 
 ## Recommended Team Workflow
 

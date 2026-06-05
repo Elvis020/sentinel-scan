@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validation tools
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Compile Python
+        run: python -m py_compile scripts/pattern-prioritizer.py scripts/validate-patterns.py
+
+      - name: Run tests
+        run: python -m unittest discover -s tests
+
+      - name: Validate documented regex patterns
+        run: python scripts/validate-patterns.py

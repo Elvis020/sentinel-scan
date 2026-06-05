@@ -48,10 +48,11 @@ def detect_project_type(project_path: str) -> list[str]:
     if (path / ".github" / "workflows").is_dir() or (path / ".npmrc").exists() or (path / ".pypirc").exists():
         categories.append("package_publishing")
 
-    artifact_dirs = ["dist", "build", "out", "coverage"]
-    if any((path / d).is_dir() for d in artifact_dirs) or any(
-        path.glob(pattern) for pattern in ["*.map", "*.tgz", "*.zip", "*.vsix", "*.whl", "*.jar"]
-    ):
+    artifact_dirs = {"dist", "build", "out", "coverage"}
+    artifact_suffixes = (".map", ".tgz", ".zip", ".vsix", ".whl", ".jar")
+    has_artifact_dir = any(child.is_dir() and child.name in artifact_dirs for child in path.rglob("*"))
+    has_artifact_file = any(child.is_file() and child.name.endswith(artifact_suffixes) for child in path.rglob("*"))
+    if has_artifact_dir or has_artifact_file:
         categories.append("artifact_hygiene")
 
     return sorted(set(categories)) if categories else ["generic"]

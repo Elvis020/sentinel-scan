@@ -113,19 +113,20 @@ bfg --delete-files containing-secrets.txt
 bfg --replace-text secrets.txt
 
 # Push changes
-git gc --prune=now -- aggressive
+git gc --prune=now --aggressive
 ```
 
-**Option 2: git filter-branch (Manual)**
+**Option 2: git-filter-repo (Manual)**
 ```bash
 # Find the commit with the secret
 git log --all -p -S "secret-pattern" --source --remotes
 git log --all -p --full-history -- '.env*' '.mcp.json' '.cursor' '.claude' '.codex' '.continue' '.aider*' '.goose' '.opencode'
 
-# Remove from history (CAREFUL - rewrites history)
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch path/to/file" \
-  --prune-empty --tag-name-filter cat -- --all
+# Install git-filter-repo
+brew install git-filter-repo
+
+# Remove a sensitive file from history (CAREFUL - rewrites history)
+git filter-repo --path path/to/file --invert-paths
 ```
 
 ### ⚠️ Important Warnings:
@@ -187,8 +188,8 @@ Create `.git/hooks/pre-commit`:
 ```bash
 #!/bin/bash
 # Check for common secret patterns
-if git diff --cached | grep -iE "(sk-|sk-ant-|ghp_|AKIA|ASIA|AIza|lsv2_|phx_|OVSX_PAT|VSCE_PAT|NPM_TOKEN|PYPI_TOKEN|api[_-]?key.*=.*['\"][a-zA-Z0-9]{20,})"; then
-    echo "SECRETS DETECTED - commit blocked"
+if git diff --cached --no-ext-diff --text | grep -qiE "(sk-|sk-ant-|ghp_|AKIA|ASIA|AIza|lsv2_|phx_|OVSX_PAT|VSCE_PAT|NPM_TOKEN|PYPI_TOKEN|api[_-]?key.*=.*['\"][a-zA-Z0-9]{20,})"; then
+    echo "Potential secret pattern detected in staged diff - commit blocked"
     exit 1
 fi
 ```
