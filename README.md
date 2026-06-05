@@ -77,7 +77,10 @@ flowchart TD
 ├── scripts/
 │   ├── pattern-prioritizer.py  # Project-shape-based detector prioritization
 │   └── validate-patterns.py    # Regex validation for documented patterns
+├── sentinel_scan/
+│   └── catalog.py              # Shared project profiling and pattern validation logic
 ├── tests/
+│   ├── test_catalog.py
 │   └── test_pattern_prioritizer.py
 └── templates/
     ├── security-report.md      # Security summary template
@@ -206,7 +209,7 @@ Example output:
 Run the local checks before changing detector guidance:
 
 ```bash
-python3 -m py_compile scripts/pattern-prioritizer.py scripts/validate-patterns.py
+python3 -m py_compile sentinel_scan/catalog.py scripts/pattern-prioritizer.py scripts/validate-patterns.py
 python3 -m unittest discover -s tests
 python3 scripts/validate-patterns.py
 python3 scripts/pattern-prioritizer.py .

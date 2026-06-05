@@ -21,7 +21,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
       - name: Compile Python
-        run: python -m py_compile scripts/pattern-prioritizer.py scripts/validate-patterns.py
+        run: python -m py_compile sentinel_scan/catalog.py scripts/pattern-prioritizer.py scripts/validate-patterns.py
 
       - name: Run tests
         run: python -m unittest discover -s tests
